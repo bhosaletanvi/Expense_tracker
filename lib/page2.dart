@@ -14,9 +14,10 @@ class _Page2State extends State<Page2> {
 
   int sum = 0;
 
-  late final TextEditingController placeController;
-  late final TextEditingController costController;
+  TextEditingController placeController=TextEditingController();
+  TextEditingController costController=TextEditingController();
 
+final _formKey = GlobalKey<FormState>();
   @override
   void initState() {
     super.initState();
@@ -55,11 +56,26 @@ class _Page2State extends State<Page2> {
       }
     });
   }
+DateTime? selectedDate;
 
+Future<void> selectDate() async {
+  DateTime? date = await showDatePicker(
+    context: context,
+    initialDate: DateTime.now(),
+    firstDate: DateTime(2020),
+    lastDate: DateTime(2030),
+  );
+
+  if (date != null) {
+    setState(() {
+      selectedDate = date;
+    });
+  }
+}
   void addtoday() {
     setState(() {
       Map<String, dynamic> dayinfo = {};
-
+      dayinfo["date"]=selectedDate;
       dayinfo["total"] = sum;
       dayinfo["all_tasks"] = List<Map<String, dynamic>>.from(cost);
 
@@ -88,7 +104,7 @@ class _Page2State extends State<Page2> {
             borderRadius: BorderRadius.circular(25),
             boxShadow: [
               BoxShadow(
-                color: Colors.teal.withOpacity(.3),
+                color: Colors.teal,
                 blurRadius: 15,
                 offset: const Offset(0, 8),
               ),
@@ -130,64 +146,83 @@ class _Page2State extends State<Page2> {
           ),
           child: Padding(
             padding: const EdgeInsets.all(18),
-            child: Column(
-              children: [
-
-                TextFormField(
-                  controller: placeController,
-                  decoration: InputDecoration(
-                    hintText: "Where did you spend?",
-                    labelText: "Place",
-                    prefixIcon: const Icon(Icons.place),
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 15),
-
-                TextFormField(
-                  controller: costController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    hintText: "Enter Amount",
-                    labelText: "Amount",
-                    prefixIcon: const Icon(Icons.currency_rupee),
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+              
+                  TextFormField(
+                    controller: placeController,
+                    validator: (value) {
+                      if(value==null || value.isEmpty){
+                        return "please enter place";
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      hintText: "Where did you spend?",
+                      labelText: "Place",
+                      prefixIcon: const Icon(Icons.place),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none,
                       ),
                     ),
-                    onPressed: addcost,
-                    icon: const Icon(Icons.add),
-                    label: const Text(
-                      "Add Expense",
-                      style: TextStyle(fontSize: 16),
+                  ),
+              
+                  const SizedBox(height: 15),
+              
+                  TextFormField(
+                    controller: costController,
+                    validator: (value) {
+                      if (value==null || value.isEmpty) {
+                        return "please enter cost";
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: "Enter Amount",
+                      labelText: "Amount",
+                      prefixIcon: const Icon(Icons.currency_rupee),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
-                ),
-              ],
+              
+                  const SizedBox(height: 20),
+              
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      onPressed:(){
+                        if(_formKey.currentState!.validate()){
+                          addcost();
+                        }
+                      } ,
+                      icon: const Icon(Icons.add),
+                      label: const Text(
+                        "Add Expense",
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -321,9 +356,16 @@ class _Page2State extends State<Page2> {
                 borderRadius: BorderRadius.circular(15),
               ),
             ),
-            onPressed: addtoday,
+            onPressed: (){
+               selectDate();
+               addtoday();
+            },
             icon: const Icon(Icons.save),
-            label: const Text("Save Today"),
+            label: Text(
+              selectedDate == null
+              ? "save Today"
+              : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+            ),
           ),
         ),
       ],
@@ -392,7 +434,9 @@ class _Page2State extends State<Page2> {
                 ),
 
                 title: Text(
-                  "Day ${index + 1}",
+                  days[index]["date"] != null
+                      ? "${days[index]["date"].day}/${days[index]["date"].month}/${days[index]["date"].year}"
+                      : "Unknown date",
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

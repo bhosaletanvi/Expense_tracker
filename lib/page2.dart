@@ -97,25 +97,25 @@ Future<void> selectDate() async {
 
         /// App Logo
         Container(
-          height: 60,
-          width: 60,
-          decoration: BoxDecoration(
-            color: Colors.teal,
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.teal,
-                blurRadius: 15,
-                offset: const Offset(0, 8),
+                height: 100,
+                width: 100,
+                decoration: BoxDecoration(
+                  color: Colors.teal,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.teal,
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: Colors.white,
+                  size: 50,
+                ),
               ),
-            ],
-          ),
-          child: const Icon(
-            Icons.account_balance_wallet_rounded,
-            color: Colors.white,
-            size: 45,
-          ),
-        ),
 
         const SizedBox(height: 10),
 

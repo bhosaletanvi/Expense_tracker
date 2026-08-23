@@ -1,4 +1,6 @@
+import 'package:expense_wise/loginpage.dart';
 import 'package:expense_wise/page2.dart';
+import 'package:expense_wise/registerPage.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -11,7 +13,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: Page2(),
+      home: registerpage(),
     );
   }
 }

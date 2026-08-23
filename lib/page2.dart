@@ -97,8 +97,8 @@ Future<void> selectDate() async {
 
         /// App Logo
         Container(
-          height: 90,
-          width: 90,
+          height: 60,
+          width: 60,
           decoration: BoxDecoration(
             color: Colors.teal,
             borderRadius: BorderRadius.circular(25),
@@ -252,7 +252,7 @@ Future<void> selectDate() async {
                   "Today's Expense",
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 18,
+                    fontSize: 15,
                   ),
                 ),
 
@@ -262,7 +262,7 @@ Future<void> selectDate() async {
                   "₹ $sum",
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 34,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

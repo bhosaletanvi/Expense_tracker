@@ -1,58 +1,58 @@
 import 'package:expense_wise/page2.dart';
 import 'package:expense_wise/registerPage.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class Loginpage extends StatefulWidget {
-  final Map user;
-  const Loginpage({super.key,required this.user});
+  const Loginpage({super.key});
 
   @override
   State<Loginpage> createState() => _LoginpageState();
 }
 
 class _LoginpageState extends State<Loginpage> {
+
   final _formKey = GlobalKey<FormState>();
-  bool userFound = false;
-  String massage="";
 
-  late final List<Map> users;
-
-  @override
-  void initState() {
-    super.initState();
-    users = [widget.user];
-  }
-
-  final TextEditingController namecontroller = TextEditingController();
+  final TextEditingController emailcontroller = TextEditingController();
   final TextEditingController passwordcontroller = TextEditingController();
+Future<void> loginUser() async {
+  if (_formKey.currentState!.validate()) {
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailcontroller.text.trim(),
+        password: passwordcontroller.text.trim(),
+      );
 
-  // void logintopage(){
-  //         print(users);
-
-  //   for (var i = 0; i < users.length; i++) {
-  //       if(users[i]["name"]==namecontroller.text && users[i]["password"]==passwordcontroller.text){
-  //         setState(() {
-  //          userFound=true;
-  //          massage="";
-  //          Navigator.push(context, MaterialPageRoute(builder: (_)=>Page2()));
-  //         });
-  //         break;
-  //       }
-  //   }
-  //   if(!userFound){
-  //    setState(() {
-  //       massage = "Invalid information. Please try again or register.";
-  //    });
-  //   }
-  //   return;
-
-  // }
-  void addNewuser(){
-    setState(() {
-      users.add(widget.user);
-    });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Page2(),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.message ?? "Invalid information. Please try again.",
+          ),
+        ),
+      );
+    }
   }
-  @override
+}
+ 
+  // void addNewEmail(){
+  //   setState(() {
+  //     Emails.add(widget.Email);
+  //   });
+  // }
+ @override
+void dispose() {
+  emailcontroller.dispose();
+  passwordcontroller.dispose();
+  super.dispose();
+}
   @override
 Widget build(BuildContext context) {
   return Scaffold(
@@ -151,26 +151,25 @@ Widget build(BuildContext context) {
 
                         const SizedBox(height: 25),
 
-                        // ================= USERNAME =================
+                        // ================= EmailNAME =================
 
                         TextFormField(
-                          controller: namecontroller,
-                          validator: (value) {
-                            bool name=false;
-                             for (var i = 0; i < users.length; i++) {
-                              if(users[i]["name"]==namecontroller.text){
-                                name = true;
-                                  break;
-                             }
-                           }
-                           if(!name){
-                            return "Please enter valid name";
-                           }
-                           return null;
-                          },
+                          controller: emailcontroller,
+
+  validator: (value) {
+    if (value == null || value.isEmpty) {
+      return "Please enter your email";
+    }
+
+    if (!value.contains("@")) {
+      return "Please enter a valid email";
+    }
+
+    return null;
+  },
                           decoration: InputDecoration(
-                            labelText: "User ID",
-                            hintText: "Enter your user ID",
+                            labelText: "Email ID",
+                            hintText: "Enter your Email ID",
 
                             prefixIcon: const Icon(
                               Icons.person_outline,
@@ -200,21 +199,21 @@ Widget build(BuildContext context) {
                         // ================= PASSWORD =================
 
                         TextFormField(
-                          controller: passwordcontroller,
-                             validator: (value) {
-                            bool pass=false;
-                             for (var i = 0; i < users.length; i++) {
-                              if(users[i]["password"]==passwordcontroller.text){
-                                pass = true;
-                                  break;
-                             }
-                           }
-                           if(!pass){
-                            return "Please enter valid password";
-                           }
-                           return null;
-                          },
-                          obscureText: true,
+                           controller: passwordcontroller,
+
+  validator: (value) {
+    if (value == null || value.isEmpty) {
+      return "Please enter your password";
+    }
+
+    if (value.length < 6) {
+      return "Password must be at least 6 characters";
+    }
+
+    return null;
+  },
+
+  obscureText: true,
 
                           decoration: InputDecoration(
                             labelText: "Password",
@@ -252,13 +251,7 @@ Widget build(BuildContext context) {
                           height: 52,
 
                           child: ElevatedButton.icon(
-                            onPressed: (){
-                              if(_formKey.currentState!.validate()){
-                                Navigator.push(context, MaterialPageRoute(builder: (_)=>Page2()),
-                                
-                                );
-                              }
-                            },
+                          onPressed: loginUser,
                            
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.teal,
@@ -329,18 +322,14 @@ Widget build(BuildContext context) {
                           height: 52,
 
                           child: OutlinedButton.icon(
-                            onPressed: () {
-
-                              addNewuser();
-
-                              Navigator.push(
-                                context,
-
-                                MaterialPageRoute(
-                                  builder: (_) => registerpage(),
-                                ),
-                              );
-                            },
+                           onPressed: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const registerpage(),
+    ),
+  );
+},
 
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.teal,

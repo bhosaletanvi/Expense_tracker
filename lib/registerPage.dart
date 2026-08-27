@@ -22,19 +22,8 @@ class _registerpageState extends State<registerpage> {
         email: emailcontroller.text.trim(),
         password: passwordcontroller.text.trim(),
       );
+           Navigator.of(context).popUntil((route) => route.isFirst);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Account created successfully"),
-        ),
-      );
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const Loginpage(),
-        ),
-      );
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

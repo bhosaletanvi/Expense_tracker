@@ -1,3 +1,4 @@
+import 'package:expense_wise/authWrapper.dart';
 import 'package:expense_wise/loginpage.dart';
 import 'package:expense_wise/page2.dart';
 import 'package:expense_wise/registerPage.dart';
@@ -22,7 +23,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: registerpage(),
+      home: AuthWrapper(),
     );
   }
 }

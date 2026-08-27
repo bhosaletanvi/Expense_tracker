@@ -1,4 +1,7 @@
 import 'package:expense_wise/DayList.dart';
+import 'package:expense_wise/loginpage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 class Page2 extends StatefulWidget {
@@ -16,6 +19,8 @@ class _Page2State extends State<Page2> {
 
   TextEditingController placeController=TextEditingController();
   TextEditingController costController=TextEditingController();
+  User? users = FirebaseAuth.instance.currentUser;
+
 
 final _formKey = GlobalKey<FormState>();
   @override
@@ -56,6 +61,7 @@ final _formKey = GlobalKey<FormState>();
       }
     });
   }
+ 
 DateTime? selectedDate;
 
 Future<void> selectDate() async {
@@ -85,7 +91,10 @@ Future<void> selectDate() async {
       cost = [];
     });
   }
-
+   Future<void> logout() async{
+    print("logout pressed");
+    await FirebaseAuth.instance.signOut();
+  }
   int selectedindex = 0;
     List<Widget> get widgets => [
         // ================= ADD EXPENSE PAGE =================
@@ -96,46 +105,167 @@ Future<void> selectDate() async {
       children: [
 
         /// App Logo
+       
+        Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  crossAxisAlignment: CrossAxisAlignment.center,
+  children: [
+
+    // ================= LOGO + APP NAME =================
+    Row(
+      children: [
+
+        // Logo
         Container(
-                height: 100,
-                width: 100,
-                decoration: BoxDecoration(
-                  color: Colors.teal,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.teal,
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.account_balance_wallet_rounded,
-                  color: Colors.white,
-                  size: 50,
-                ),
+          height: 65,
+          width: 65,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Colors.teal,
+                Colors.green,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.teal.withOpacity(0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
+            ],
+          ),
+          child: const Icon(
+            Icons.account_balance_wallet_rounded,
+            color: Colors.white,
+            size: 34,
+          ),
+        ),
+
+        const SizedBox(width: 14),
+
+        // App Name + Tagline
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            Text(
+              "SpendWise",
+              style: TextStyle(
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
+                color: Colors.teal,
+                letterSpacing: 0.5,
+              ),
+            ),
+
+            SizedBox(height: 3),
+
+            Text(
+              "Track Every Rupee",
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+
+    // ================= ACTION BUTTONS =================
+    Row(
+      children: [
+
+        // Profile Button
+       Container(
+  padding: const EdgeInsets.symmetric(
+    horizontal: 14,
+    vertical: 8,
+  ),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(18),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.grey.withOpacity(0.15),
+        blurRadius: 12,
+        offset: const Offset(0, 4),
+      ),
+    ],
+  ),
+  child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+
+      // Profile Icon
+      Container(
+        height: 40,
+        width: 40,
+        decoration: BoxDecoration(
+          color: Colors.teal.shade50,
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.person_rounded,
+          color: Colors.teal,
+          size: 26,
+        ),
+      ),
+
+      const SizedBox(width: 10),
+
+      // User Information
+      
+      Text(
+        users?.email?.split('@').first ?? 'No email',
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
+        ),
+      ),
+    ],
+  ),
+),
+
+        const SizedBox(width: 10),
+
+        // Logout Button
+        Container(
+          height: 50,
+          width: 50,
+          decoration: BoxDecoration(
+            color: Colors.red,
+            // shape: BoxShape.circle,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: IconButton(
+            onPressed: logout,
+            icon: const Icon(
+              Icons.logout_rounded,
+              color: Colors.white,
+            ),
+            tooltip: "Logout",
+          ),
+        ),
+      ],
+    ),
+  ],
+),
 
         const SizedBox(height: 10),
 
-        const Text(
-          "SpendWise",
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.teal,
-          ),
-        ),
-
-        const Text(
-          "Track Every Rupee",
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 15,
-          ),
-        ),
-
+       
         const SizedBox(height: 20),
 
         /// Input Card

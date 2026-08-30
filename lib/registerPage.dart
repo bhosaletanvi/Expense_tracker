@@ -1,4 +1,5 @@
 import 'package:expense_wise/loginpage.dart';
+import 'package:expense_wise/page2.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -16,13 +17,15 @@ class _registerpageState extends State<registerpage> {
   TextEditingController passwordcontroller =TextEditingController();
 
   Future<void> createAccount() async {
+    
   if (_formKey.currentState!.validate()) {
+    print("register successfully");
     try {
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailcontroller.text.trim(),
         password: passwordcontroller.text.trim(),
       );
-           Navigator.of(context).popUntil((route) => route.isFirst);
+           Navigator.push(context, MaterialPageRoute(builder: (_)=>Loginpage()));
 
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -33,12 +36,7 @@ class _registerpageState extends State<registerpage> {
     }
   }
 }
-  @override
-void dispose() {
-  emailcontroller.dispose();
-  passwordcontroller.dispose();
-  super.dispose();
-}
+  
   @override
 Widget build(BuildContext context) {
   return Scaffold(

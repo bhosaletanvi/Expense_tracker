@@ -23,8 +23,8 @@ Future<void> loginUser() async {
         email: emailcontroller.text.trim(),
         password: passwordcontroller.text.trim(),
       );
-              print("logingggggggggggggg");
-      Navigator.of(context).popUntil((route) => route.isFirst);
+              print("loging");
+      Navigator.push(context, MaterialPageRoute(builder: (_)=>Page2()));
 
       
     } on FirebaseAuthException catch (e) {
@@ -130,7 +130,7 @@ Widget build(BuildContext context) {
                       children: [
 
                         const Text(
-                          "Welcome Back 👋",
+                          "Welcome Back ",
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,

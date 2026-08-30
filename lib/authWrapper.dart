@@ -13,7 +13,7 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, snapshot) {
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
+          return  Scaffold(
             body: Center(
               child: CircularProgressIndicator(),
             ),
@@ -22,11 +22,11 @@ class AuthWrapper extends StatelessWidget {
 
         if (snapshot.hasData) {
           print("going to homepage");
-          return const Page2();
+          return  Page2();
         }
 
         print("going to login page");
-        return const Loginpage();
+        return  Loginpage();
       },
     );
   }

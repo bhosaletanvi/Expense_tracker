@@ -220,7 +220,7 @@ Future<void> selectDate() async {
       // User Information
       
       Text(
-        users?.email?.split('@').first ?? 'No email',
+        users!.email!.split('@').first ?? 'No email',
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,

@@ -1,4 +1,4 @@
-import 'package:expense_wise/DayList.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:expense_wise/loginpage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -30,38 +30,73 @@ final _formKey = GlobalKey<FormState>();
     costController = TextEditingController();
   }
 
-  void addcost() {
-    setState(() {
-      Map<String, dynamic> temp = {};
+ Future<void> addcost() async {
+  Map<String, dynamic> newTask = {
+    "place": placeController.text,
+    "price": num.tryParse(costController.text) ?? 0,
+  };
 
-      temp["place"] = placeController.text;
-      temp["price"] = costController.text;
 
-      cost.add(temp);
+  // Find dayinfo for this user and selected date
+  final userInfo = await FirebaseFirestore.instance
+      .collection("dayinfo")
+      .where("user_id", isEqualTo: users!.uid)
+      .where("date", isEqualTo: selectedDate)
+      .get();
 
-      costController.clear();
-      placeController.clear();
-
-      sum = 0;
-
-      for (Map data in cost) {
-        sum += int.parse(data["price"]);
-      }
+  // If no document exists, CREATE one
+  if (userInfo.docs.isEmpty) {
+    await FirebaseFirestore.instance.collection("dayinfo").add({
+      "user_id": users!.uid,
+      "date": selectedDate,
+      "total": num.tryParse(costController.text) ?? 0,
+      "all_tasks": [newTask],
     });
+
+    print("New dayinfo created");
+    return;
   }
 
-  void removecost(int index) {
-    setState(() {
-      cost.remove(cost[index]);
+  // Existing document
+  final doc = userInfo.docs.first;
 
-      sum = 0;
+  Map<String, dynamic> data = doc.data();
 
-      for (Map data in cost) {
-        sum += int.parse(data["price"]);
-      }
-    });
+  // Get old total
+  num oldTotal = data["total"] ?? 0;
+
+  // Get existing tasks
+  List<Map<String, dynamic>> allTasks = [];
+
+  if (data["all_tasks"] != null) {
+    allTasks = List<Map<String, dynamic>>.from(
+      (data["all_tasks"] as List).map(
+        (task) => Map<String, dynamic>.from(task),
+      ),
+    );
   }
- 
+
+  // Add new task
+  allTasks.add(newTask);
+
+  // Add new price to total
+  num newTotal =
+      oldTotal + (num.tryParse(costController.text) ?? 0);
+
+  // Update existing document
+  await FirebaseFirestore.instance
+      .collection("dayinfo")
+      .doc(doc.id)
+      .update({
+        "total": newTotal,
+        "all_tasks": allTasks,
+      });
+
+  print("Updated successfully");
+  costController.clear();
+  placeController.clear();
+}
+   
 DateTime? selectedDate;
 
 Future<void> selectDate() async {
@@ -78,27 +113,66 @@ Future<void> selectDate() async {
     });
   }
 }
-  void addtoday() {
-    setState(() {
-      Map<String, dynamic> dayinfo = {};
-      dayinfo["date"]=selectedDate;
-      dayinfo["total"] = sum;
-      dayinfo["all_tasks"] = List<Map<String, dynamic>>.from(cost);
 
-      days.add(dayinfo);
+Future<void> deletetask(int index) async {
+  final userInfo = await FirebaseFirestore.instance
+      .collection("dayinfo")
+      .where(
+        "user_id",
+        isEqualTo: users!.uid,
+      )
+      .where(
+        "date",
+        isEqualTo: selectedDate,
+      )
+      .get();
 
-      sum = 0;
-      cost = [];
-    });
+  if (userInfo.docs.isEmpty) {
+    print("No day found");
+    return;
   }
+
+  // Get the document
+  final doc = userInfo.docs.first;
+
+  // Get document data
+  final data = doc.data();
+
+  // Get all tasks
+  final List all_tasks = List.from(data["all_tasks"] ?? []);
+
+  print("BEFORE DELETE = $all_tasks");
+
+  // Delete task at particular index
+  all_tasks.removeAt(index);
+
+  print("AFTER DELETE = $all_tasks");
+
+  // Calculate total again
+  num sum = 0;
+
+  for (final element in all_tasks) {
+    sum += (element["price"] as num);
+  }
+
+  print("NEW TOTAL = $sum");
+
+  // Update Firestore
+  await doc.reference.update({
+    "all_tasks": all_tasks,
+    "total": sum,
+  });
+
+  print("Task deleted successfully");
+}
    Future<void> logout() async{
     print("logout pressed");
     await FirebaseAuth.instance.signOut();
   }
-  int selectedindex = 0;
-    List<Widget> get widgets => [
-        // ================= ADD EXPENSE PAGE =================
-    Center(
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
   child: Padding(
     padding: const EdgeInsets.all(16),
     child: Column(
@@ -280,7 +354,42 @@ Future<void> selectDate() async {
               key: _formKey,
               child: Column(
                 children: [
-              
+
+      SizedBox(
+  width: double.infinity,
+  height: 52,
+  child: ElevatedButton.icon(
+    onPressed: () async {
+      await selectDate();
+    },
+
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.teal,
+      foregroundColor: Colors.white,
+      elevation: 5,
+      shadowColor: Colors.teal.withOpacity(0.3),
+
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+    ),
+
+    icon: const Icon(
+      Icons.calendar_month_rounded,
+    ),
+
+    label: Text(
+      selectedDate == null
+          ? "Select Date"
+          : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  ),
+),
+                  SizedBox(height: 20,),
                   TextFormField(
                     controller: placeController,
                     validator: (value) {
@@ -339,11 +448,21 @@ Future<void> selectDate() async {
                           borderRadius: BorderRadius.circular(15),
                         ),
                       ),
-                      onPressed:(){
-                        if(_formKey.currentState!.validate()){
-                          addcost();
-                        }
-                      } ,
+                      onPressed: () async {
+  if (_formKey.currentState!.validate()) {
+
+    if (selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select a date first"),
+        ),
+      );
+      return;
+    }
+
+    await addcost();
+  }
+} ,
                       icon: const Icon(Icons.add),
                       label: const Text(
                         "Add Expense",
@@ -387,15 +506,86 @@ Future<void> selectDate() async {
                 ),
 
                 const SizedBox(height: 8),
+               StreamBuilder<QuerySnapshot>(
+  stream: selectedDate == null
+      ? null
+      : FirebaseFirestore.instance
+          .collection("dayinfo")
+          .where("user_id", isEqualTo: users!.uid)
+          .where(
+            "date",
+            isEqualTo: Timestamp.fromDate(selectedDate!),
+          )
+          .snapshots(),
 
-                Text(
-                  "₹ $sum",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+  builder: (context, snapshot) {
+
+    // No date selected
+    if (selectedDate == null) {
+      return const Text(
+        "₹ 0",
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+
+    // Loading
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const CircularProgressIndicator(
+        color: Colors.white,
+      );
+    }
+
+    // Error
+    if (snapshot.hasError) {
+      print("ERROR: ${snapshot.error}");
+
+      return const Text(
+        "₹ 0",
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+
+    // No document found
+    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+      print("No expense found for this date");
+
+      return const Text(
+        "₹ 0",
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+
+    // Get first matching document
+    final doc = snapshot.data!.docs.first;
+
+    final data = doc.data() as Map<String, dynamic>;
+
+    // Print total
+    print("TOTAL = ${data["total"]}");
+
+    return Text(
+      "₹ ${data["total"]}",
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  },
+),
+               
               ],
             ),
           ),
@@ -403,282 +593,115 @@ Future<void> selectDate() async {
 
         const SizedBox(height: 20),
 
-        Expanded(
-          child: cost.isEmpty
-              ? Center(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                    
-                        Icon(
-                          Icons.receipt_long,
-                          size: 90,
-                          color: Colors.grey.shade400,
-                        ),
-                    
-                        const SizedBox(height: 10),
-                    
-                        Text(
-                          "No Expenses Yet",
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: cost.length,
-                  itemBuilder: (context, index) {
+       Expanded(
+  child: StreamBuilder<QuerySnapshot>(
+    stream: selectedDate == null
+        ? null
+        : FirebaseFirestore.instance
+            .collection("dayinfo")
+            .where(
+              "user_id",
+              isEqualTo: users!.uid,
+            )
+            .where(
+              "date",
+              isEqualTo: Timestamp.fromDate(selectedDate!),
+            )
+            .snapshots(),
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: ListTile(
+    builder: (context, snapshot) {
 
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.teal,
-                          child: const Icon(
-                            Icons.shopping_bag,
-                            color: Colors.white,
-                          ),
-                        ),
+      // Date not selected
+      if (selectedDate == null) {
+        return const Center(
+          child: Text("Please select a date"),
+        );
+      }
 
-                        title: Text(
-                          cost[index]["place"],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+      // Loading
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      }
 
-                        subtitle: Text(
-                          "₹ ${cost[index]["price"]}",
-                        ),
+      // Error
+      if (snapshot.hasError) {
+        print(snapshot.error);
 
-                        trailing: IconButton(
-                          icon: const Icon(
-                            Icons.delete_forever,
-                            color: Colors.red,
-                          ),
-                          onPressed: () => removecost(index),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ),
+        return const Center(
+          child: Text("Unable to load expenses"),
+        );
+      }
 
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-            ),
-            onPressed: (){
-               selectDate();
-               addtoday();
-            },
-            icon: const Icon(Icons.save),
-            label: Text(
-              selectedDate == null
-              ? "save Today"
-              : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
-            ),
-          ),
-        ),
-      ],
-    ),
-  ),
-),
-       days.isEmpty
-    ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+      // No document
+      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        return const Center(
+          child: Text("No expenses for this day"),
+        );
+      }
 
-            Icon(
-              Icons.calendar_month_rounded,
-              size: 90,
-              color: Colors.grey.shade400,
-            ),
+      // Get Firestore document
+      final doc = snapshot.data!.docs.first;
 
-            const SizedBox(height: 15),
+      final data = doc.data() as Map<String, dynamic>;
 
-            const Text(
-              "No Days Added",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
+      // all_tasks is already a List
+      final List all_tasks = data["all_tasks"] ?? [];
 
-            const SizedBox(height: 8),
+      print("ALL TASKS = $all_tasks");
 
-            const Text(
-              "Save your first day's expenses",
-              style: TextStyle(
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      )
-    : Padding(
-        padding: const EdgeInsets.all(12),
-        child: ListView.builder(
-          itemCount: days.length,
-          itemBuilder: (context, index) {
-            return Card(
-              elevation: 6,
-              margin: const EdgeInsets.only(bottom: 15),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: ListTile(
+      return ListView.builder(
+        itemCount: all_tasks.length,
 
-                contentPadding: const EdgeInsets.all(15),
+        itemBuilder: (context, index) {
 
-                leading: CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.teal,
-                  child: Text(
-                    "${index + 1}",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+          final one_task = all_tasks[index];
 
-                title: Text(
-                  days[index]["date"] != null
-                      ? "${days[index]["date"].day}/${days[index]["date"].month}/${days[index]["date"].year}"
-                      : "Unknown date",
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(15),
+            child: ListTile(
+              title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+
+                Text(
+                  one_task["place"] ?? "",
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
 
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                const SizedBox(height: 5),
 
-                    const SizedBox(height: 8),
-
-                    Row(
-                      children: [
-
-                        const Icon(
-                          Icons.currency_rupee,
-                          color: Colors.green,
-                          size: 18,
-                        ),
-
-                        Text(
-                          "${days[index]["total"]}",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 5),
-
-                    Row(
-                      children: [
-
-                        const Icon(
-                          Icons.receipt_long,
-                          color: Colors.orange,
-                          size: 18,
-                        ),
-
-                        const SizedBox(width: 5),
-
-                        Text(
-                          "${days[index]["all_tasks"].length} Expenses",
-                          style: const TextStyle(
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                trailing: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.teal.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.visibility,
-                      color: Colors.teal,
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => Daylist(
-                            dayinfo: days[index],
-                            index: index,
-                          ),
-                        ),
-                      );
-                    },
+                Text(
+                  "₹ ${one_task["price"]}",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.green,
                   ),
                 ),
+              ],
               ),
-            );
-          },
-        ),
-      )
-      ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      body: widgets[selectedindex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: selectedindex,
-        selectedItemColor: Colors.teal,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        onTap: (index) {
-          setState(() {
-            selectedindex = index;
-          });
+              trailing: IconButton(onPressed: (){
+                deletetask(index);
+              }, icon: Icon(Icons.delete_outline_rounded)),
+            ),
+            
+          );
         },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            label: "Add",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: "History",
-          ),
-        ],
-      ),
+      );
+    },
+  ),
+),
+
+       
+      ],
+    ),
+  ),
+),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:expense_wise/loginpage.dart';
 import 'package:expense_wise/page2.dart';
 import 'package:flutter/material.dart';
@@ -15,17 +16,27 @@ class _registerpageState extends State<registerpage> {
 
   TextEditingController emailcontroller=TextEditingController();
   TextEditingController passwordcontroller =TextEditingController();
-
   Future<void> createAccount() async {
     
   if (_formKey.currentState!.validate()) {
-    print("register successfully");
     try {
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailcontroller.text.trim(),
         password: passwordcontroller.text.trim(),
       );
-           Navigator.push(context, MaterialPageRoute(builder: (_)=>Loginpage()));
+
+      print("added to auth");
+        User? users = FirebaseAuth.instance.currentUser;
+
+      await FirebaseFirestore.instance.collection("users").add({
+        "user_id":users!.uid,
+        "email": emailcontroller.text.trim()
+      });
+            print("added to firebase");
+                print("register successfully");
+
+
+          // Navigator.push(context, MaterialPageRoute(builder: (_)=>Loginpage()));
 
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

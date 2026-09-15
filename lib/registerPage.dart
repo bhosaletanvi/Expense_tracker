@@ -358,6 +358,9 @@ class _registerpageState extends State<registerpage> {
 
         print("added to firebase");
         print("register successfully");
+        if (mounted) {
+        Navigator.pop(context);
+      }
       } on FirebaseAuthException catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -440,10 +440,10 @@ class _LoginpageState extends State<Loginpage> {
   Widget build(BuildContext context) {
     const Color plum = Color(0xFF35152F);
     const Color darkPlum = Color(0xFF281025);
-    const Color apricot = Color.fromARGB(255, 94, 25, 214);
+    const Color apricot = Color(0xFFF39A6B);
     const Color butter = Color(0xFFFFD978);
     const Color cream = Color(0xFFFFF8EE);
-    const Color rose = Color.fromARGB(255, 21, 40, 211);
+    const Color rose = Color(0xFFF4D8D3);
     const Color softPurple = Color(0xFFE9DCE8);
 
     return Scaffold(
